@@ -1,0 +1,13 @@
+__pycache__
+
+venv
+.venv
+
+frames/
+*.jpeg
+*.png
+*.jpg
+*.pkl
+
+.DS_Store
+
