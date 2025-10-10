@@ -54,6 +54,8 @@ if uploaded_files:
     # Display grouped images
     for i, group in enumerate(grouped_images):
         st.subheader(f"Group {i+1}")
-        cols = st.columns(len(group))
-        for col, img in zip(cols, group):
-            col.image(img, use_column_width=True)
+        # cols = st.columns(len(group))
+        # for col, img in zip(cols, group):
+        #     col.image(img)
+        for img in group:
+            st.image(img, width=300)  # fixed size, keeps aspect ratio

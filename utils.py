@@ -39,7 +39,7 @@ def cluster(embeddings):
         A list of integers >= -1. -1 means outlier, each int >=0 represent a cluster that vector belongs to
             e.g. output=[0, 1, 0] indicates embeddings[0] and embeddings[2] belong to same cluster
     """
-    clustering = DBSCAN(metric="cosine", eps=0.68, min_samples=1) # eps is the distance between vectors to be grouped together, min_samples is the min number of vectors needed for a cluster
+    clustering = DBSCAN(metric="cosine", eps=0.6, min_samples=2) # eps is the distance between vectors to be grouped together, min_samples is the min number of vectors needed for a cluster
     X = np.stack(embeddings)
     clustering.fit(X)
     return clustering.labels_
