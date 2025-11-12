@@ -1,10 +1,9 @@
-# from deepface import DeepFace
+from incdbscan import IncrementalDBSCAN
+from deepface import DeepFace
 import numpy as np
-from sklearn.cluster import DBSCAN
-# import matplotlib.pyplot as plt
-# from sklearn.decomposition import PCA
-# from sklearn.manifold import TSNE
-from sklearn.preprocessing import normalize
+from sklearn.cluster import *
+
+global all_embeddings
 
 def detect_and_embed(img, detector_backend="mtcnn", model_name="ArcFace", enforce_detection=True, align=True):
     """
@@ -31,7 +30,7 @@ def detect_and_embed(img, detector_backend="mtcnn", model_name="ArcFace", enforc
         r["img_path"] = img
     return rep
 
-def cluster(embeddings):
+def cluster(clustering, embeddings):
     """
     Input:
         embeddings: list of vector embeddings
@@ -39,12 +38,19 @@ def cluster(embeddings):
         A list of integers >= -1. -1 means outlier, each int >=0 represent a cluster that vector belongs to
             e.g. output=[0, 1, 0] indicates embeddings[0] and embeddings[2] belong to same cluster
     """
-    clustering = DBSCAN(metric="cosine", eps=0.6, min_samples=2) # eps is the distance between vectors to be grouped together, min_samples is the min number of vectors needed for a cluster
+    global all_embeddings
+    
     X = np.stack(embeddings)
-    clustering.fit(X)
-    return clustering.labels_
+    print(type(X[0]))
+    clustering.insert(X)
+    # all_embeddings = np.vstack([all_embeddings, X])
+    all_embeddings += embeddings
+    # print(all_embeddings)
+    labels = clustering.get_cluster_labels(np.array(all_embeddings))
+    # print(labels)
+    return labels
 
-def classify_faces(img_lst):
+def classify_faces(clustering, img_lst):
     embeddings = []
     face_loc = []
 
@@ -55,17 +61,31 @@ def classify_faces(img_lst):
             embeddings.append(f["embedding"])
             face_loc.append({"img_path": img, "facial_area": f["facial_area"]})
 
-    face_cluster = cluster(embeddings)
+    face_cluster = cluster(clustering, embeddings)
 
     print(face_cluster)
     
-    classified_faces = []
-    for i in range(len(face_cluster)):
-        f = face_cluster[i]
-        if f == -1:    # the face is an outlier: ignore
-            continue
-        if f >= len(classified_faces):
-            classified_faces.append([face_loc[i]])
-        else:
-            classified_faces[f].append(face_loc[i])
-    return classified_faces
+
+def main():
+    global all_embeddings
+    # all_embeddings = np.empty((0, 512))
+    all_embeddings = []
+
+    clustering = IncrementalDBSCAN(metric="cosine", eps=0.6, min_pts=2)
+
+    classify_faces(clustering, [
+        "../photos/image.png",
+        "../photos/left.png"
+    ])
+
+    classify_faces(clustering, [
+        "../photos/image.png",
+        "../photos/left.png"
+    ])
+
+    classify_faces(clustering, [
+        "../photos/photo1.jpg",
+    ])
+
+if __name__ == "__main__":
+    main()

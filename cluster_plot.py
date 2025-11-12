@@ -33,10 +33,24 @@ def plot_cluster(embeddings, clustering):
 embeddings = []
 
 ## replace "photos/photo1.jpg" with path to any photo
-faces = detect_and_embed("photos/photo1.jpg")
+faces = []
+img_list = [
+    "../photos/image.png", 
+    "../photos/left.png", 
+    "../photos/photo1.jpg",
+    "../photos/right.png", 
+    "../photos/trump_test.jpg", 
+    "../photos/trump_test2.jpg", 
+    "../photos/trump_test3.jpg", 
+    "../photos/trump.jpg", 
+]
+
+for img_path in img_list:
+    faces += detect_and_embed(img_path)
 
 for f in faces:
     embeddings.append(f["embedding"])
 clustering = cluster(embeddings)
+print(clustering)
 # print(clustering)
 plot_cluster(embeddings, clustering)
