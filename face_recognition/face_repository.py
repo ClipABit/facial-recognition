@@ -188,6 +188,8 @@ class FaceRepository:
         Returns:
             set[int]: A set of cluster labels (may be empty if no faces observed).
         """
+        if clip_id not in self.clip_faces_map:
+            logging.warning(f"FaceRepository: No faces recorded for clip_id {clip_id}. Empty set will be returned.")
         return self.clip_faces_map.get(clip_id, set())
         
     def get_face_images_in_clip(self, clip_id: int):
@@ -201,10 +203,16 @@ class FaceRepository:
                 order is determined by the set iteration over cluster labels.
         """
         face_images = []
+        if (clip_id not in self.clip_faces_map):
+            logging.warning(f"FaceRepository: No faces recorded for clip_id {clip_id}. Empty face image list will be returned.")
+            return []
+        
         face_labels = self.clip_faces_map.get(clip_id, set())
         for label in face_labels:
             if label in self.cluster_example_face.keys():
                 face_images.append(self.cluster_example_face[label].face_image)
+            else:
+                logging.warning(f"FaceRepository: Cluster label {label} for clip_id {clip_id} has no example face stored.")
         return face_images
 
     def add_images(self, clip_id: int, img_lst: list):
