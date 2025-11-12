@@ -13,9 +13,14 @@ class Face:
             image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
         elif (type(orig_image) == np.ndarray):
             image_np = orig_image
+        else:
+            raise ValueError("orig_image must be either a file path (str) or a numpy ndarray.")
 
         x, y, w, h = bbox
 
         # Crop (OpenCV uses NumPy slicing)
-        face_image = image_np[y:y+h, x:x+w]
+        try:
+            face_image = image_np[y:y+h, x:x+w]
+        except Exception as e:
+            raise ValueError(f"Error cropping face image with bbox {bbox}: {e}")
         return cls(embedding, face_image)

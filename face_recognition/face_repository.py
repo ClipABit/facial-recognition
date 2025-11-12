@@ -18,6 +18,10 @@ from deepface import DeepFace
 import numpy as np
 from sklearn.cluster import *
 from .face import Face
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class FaceRepository:
     """Repository that detects faces, computes embeddings and clusters them.
@@ -68,6 +72,11 @@ class FaceRepository:
 
         self.cluster_example_face: dict[int, Face] = {} # list of example face images in cluster = key
 
+        logging.debug(f"FaceRepository: Initialized FaceRepository with detector_backend={detector_backend}, "
+                     f"embedding_model_name={embedding_model_name}, enforce_detection={enforce_detection}, "
+                     f"align={align}, cluster_metric={cluster_metric}, cluster_eps={cluster_eps}, "
+                     f"cluster_min_pts={cluster_min_pts}")
+
     def __detect_and_embed(self, img):
         """Detect faces in `img` and compute embeddings.
 
@@ -86,25 +95,33 @@ class FaceRepository:
         """
         faces: list[Face] = []
 
-        rep = DeepFace.represent(
-            img_path=img,
-            model_name=self.embedding_model_name,
-            detector_backend=self.detector_backend,
-            enforce_detection=self.enforce_detection,
-            align=self.align,
-        )
+        try:
+            rep = DeepFace.represent(
+                img_path=img,
+                model_name=self.embedding_model_name,
+                detector_backend=self.detector_backend,
+                enforce_detection=self.enforce_detection,
+                align=self.align,
+            )
+        except Exception as e:
+            logger.error(f"FaceRepository: Error during face detection and embedding on image {img}: {e}\nreturning empty face list.")
+            return []
 
         for r in rep:
-            face = Face.from_original_image(
-                embedding=np.array(r["embedding"]),
-                orig_image=img,
-                bbox=(
-                    r["facial_area"]["x"],
-                    r["facial_area"]["y"],
-                    r["facial_area"]["w"],
-                    r["facial_area"]["h"],
-                ),
-            )
+            try:
+                face = Face.from_original_image(
+                    embedding=np.array(r["embedding"]),
+                    orig_image=img,
+                    bbox=(
+                        r["facial_area"]["x"],
+                        r["facial_area"]["y"],
+                        r["facial_area"]["w"],
+                        r["facial_area"]["h"],
+                    ),
+                )
+            except Exception as e:
+                logger.error(f"FaceRepository: Error creating Face object from representation {r} on image {img}: {e}\nskipping this face.")
+                continue
             faces.append(face)
 
         return faces
@@ -126,11 +143,21 @@ class FaceRepository:
                 are integers >= 0 for cluster assignments. (Outliers may be
                 filtered out by the clustering model and not returned here.)
         """
-        face_embeddings = [f.embedding for f in faces]
+        logging.debug(f"FaceRepository: Adding {len(faces)} faces to clustering for clip_id {clip_id}.")
 
-        # Stack embeddings and insert into incremental clustering
-        X = np.stack(face_embeddings)
-        self.clustering.insert(X)
+        try:
+            # collect and stack embeddings from face objects
+            face_embeddings = [f.embedding for f in faces]
+            X = np.stack(face_embeddings)
+        except Exception as e:
+            logger.error(f"FaceRepository: Error extracting embeddings from faces for clip_id {clip_id}: {e}\nreturning empty label list.")
+            return []
+
+        try:
+            self.clustering.insert(X)
+        except Exception as e:
+            logger.error(f"FaceRepository: Error inserting embeddings into clustering model for clip_id {clip_id}: {e}\nreturning empty label list.")
+            return []
 
         # Persist embeddings and retrieve labels for the inserted batch
         self.all_embeddings += face_embeddings
@@ -145,9 +172,10 @@ class FaceRepository:
         # Ensure we have a representative Face object for any newly created cluster
         for i, label in enumerate(labels):
             if label not in self.cluster_example_face.keys() and label > -1:
-                # print(i, label)
                 self.cluster_example_face[label] = faces[i]
+                logging.debug(f"FaceRepository: New face detected with cluster label {label}. Stored example face.")
 
+        logging.debug(f"FaceRepository: Added {len(faces)} faces for clip_id {clip_id}, assigned labels: {labels}. Outlier faces (label -1) will be ignored.")
         return labels
     
     # get all face cluster labels in a given clip
@@ -193,10 +221,16 @@ class FaceRepository:
         Returns:
             list[int]: Cluster labels assigned to the detected faces.
         """
+        logging.debug(f"FaceRepository: Adding frame images for clip_id {clip_id} for facial recognition, number of images: {len(img_lst)}")
+        if not img_lst:
+            logging.warning(f"FaceRepository: empty img_lst provided for clip_id {clip_id}")
+
         embedded_faces = []
         for img in img_lst:
             faces = self.__detect_and_embed(img)
             embedded_faces += faces
 
         face_cluster = self.add_faces(clip_id, embedded_faces)
+        logging.debug(f"FaceRepository: Completed processing {len(img_lst)} images for clip_id {clip_id}")
+
         return face_cluster
