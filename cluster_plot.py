@@ -35,14 +35,7 @@ embeddings = []
 ## replace "photos/photo1.jpg" with path to any photo
 faces = []
 img_list = [
-    "../photos/image.png", 
-    "../photos/left.png", 
-    "../photos/photo1.jpg",
-    "../photos/right.png", 
-    "../photos/trump_test.jpg", 
-    "../photos/trump_test2.jpg", 
-    "../photos/trump_test3.jpg", 
-    "../photos/trump.jpg", 
+    "../photos/photo1.jpg"
 ]
 
 for img_path in img_list:

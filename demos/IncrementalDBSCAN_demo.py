@@ -75,12 +75,10 @@ def main():
 
     classify_faces(clustering, [
         "../photos/image.png",
-        "../photos/left.png"
     ])
 
     classify_faces(clustering, [
         "../photos/image.png",
-        "../photos/left.png"
     ])
 
     classify_faces(clustering, [

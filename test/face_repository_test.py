@@ -6,24 +6,16 @@ import matplotlib.pyplot as plt
 import cv2
 
 fr = FaceRepository()
-# fr.add_images(0, ["../photos/photo1.jpg"])
-# fr.add_images(1, ["../photos/trump_test.jpg"])
-# print(fr.get_faces_in_clip(0))
-# print(fr.get_faces_in_clip(1))
+fr.add_images(0, ["../photos/photo1.jpg"])
+fr.add_images(1, ["../photos/image.png"])
+print(fr.get_faces_in_clip(0))
+print(fr.get_faces_in_clip(1))
 
 fr.add_images(0, [cv2.imread("../photos/photo1.jpg")])
 print(fr.get_faces_in_clip(0))
 
-fr.add_images(2, [
-    "../photos/image.png", 
-    "../photos/left.png", 
-    "../photos/photo1.jpg",
-    "../photos/right.png", 
-    "../photos/trump_test.jpg", 
-    "../photos/trump_test2.jpg", 
-    "../photos/trump_test3.jpg", 
-    "../photos/trump.jpg", 
-
+fr.add_images(2, [ 
+    "../photos/photo1.jpg"
 ])
 print(fr.get_faces_in_clip(2))
 
